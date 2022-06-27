@@ -6,23 +6,53 @@
 	<meta name="widget-description"
 		content="Widget to display historical power consumption data gathered with the script created by Stephan Kreyenborg." />
 	<meta name="widget-urlparameters" content="datasource//Data source for ShellyVerbrauch script data/datapoint" />
-
+	<script type="text/javascript" src="./jquery-3.6.0.min.js"></script>
 	<title>iQontrol Power Consumption Display Widget</title>
 </head>
 
 <body style="width: 100%; height: 100%; margin: 0px;">
+	<table id='consumption-table'>
+		<caption>Stromverbrauch</caption>
+		<thead>
+			<tr>
+				<th>Gerät</th>
+				<th>Heute</th>
+				<th>Gestern</th>
+				<th>Diese Woche</th>
+				<th>Letzte Woche</th>
+				<th>Dieser Monat</th>
+				<th>Letzter Monat</th>
+				<th>Dieses Jahr</th>
+				<th>Letztes Jahr</th>
+			</tr>
+		</thead>
+		<tbody>
+		</tbody>
+	</table>
 	<script type="text/javascript">
 
 		var DATASOURCE;
 		var SOURCE_HEUTE = getUrlParameter("datasource") + ".heute";
 		var SOURCE_GESTERN = getUrlParameter("datasource") + ".gestern";
-		
+		var SOURCE_DIESE_WOCHE = getUrlParameter("datasource") + ".diese_woche";
+		var SOURCE_DIESER_MONAT = getUrlParameter("datasource") + ".dieser_monat";
+		var SOURCE_DIESES_JAHR = getUrlParameter("datasource") + ".dieses_jahr";
+		var SOURCE_LETZTE_WOCHE = getUrlParameter("datasource") + ".letzte_woche";
+		var SOURCE_LETZTER_MONAT = getUrlParameter("datasource") + ".letzter_monat";
+		var SOURCE_LETZTES_JAHR = getUrlParameter("datasource") + ".letztes_jahr";
+		var SOURCE_IDENTIFIER = getUrlParameter("datasource").split('.').reverse()[1];
 		
 		console.log("Subscribe to Datapoints");
 		if (getUrlParameter("datasource")){
-			
+			createTableRow(SOURCE_IDENTIFIER);
 			sendPostMessage("getState", SOURCE_HEUTE);
 			sendPostMessage("getState", SOURCE_GESTERN);
+			sendPostMessage("getState", SOURCE_DIESE_WOCHE);
+			sendPostMessage("getState", SOURCE_DIESER_MONAT);
+			sendPostMessage("getState", SOURCE_DIESES_JAHR);
+			sendPostMessage("getState", SOURCE_LETZTE_WOCHE);
+			sendPostMessage("getState", SOURCE_LETZTER_MONAT);
+			sendPostMessage("getState", SOURCE_LETZTES_JAHR);
 		}
 
 		//send postMessages
@@ -34,22 +64,46 @@
 		window.addEventListener("message", receivePostMessage, false);
 		function receivePostMessage(event) { //event = {data: message data, origin: url of origin, source: id of sending element}
 			console.log(event);
-			if(event.data && event.data.command) switch(event.data.command){
+			if (event.data && event.data.command) switch (event.data.command) {
 				case "getState":
-					if(event.data.stateId) switch(event.data.stateId){
+					if (event.data.stateId) {
+						var deviceId = event.data.stateId.split('.').reverse()[2]
+						var tablerow = document.getElementById(deviceId);
+						switch (event.data.stateId) {
 						case SOURCE_HEUTE:
-							console.log("Received datasource");
 							DATASOURCE = event.data.value;
-							console.log(DATASOURCE)
-							document.getElementById('v_heute').innerHTML = event.data.value.val/1000. + " kWh";
-
+							var v = $('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_heute')
+							v.html((event.data.value.val / 1000.).toFixed(4) + " kWh");
 						break;
 						case SOURCE_GESTERN:
-							console.log("Received datasource");
 							DATASOURCE = event.data.value;
-							console.log(DATASOURCE)
-							document.getElementById('v_gestern').innerHTML = event.data.value.val/1000. + " kWh";
+							$('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_gestern').html((event.data.value.val / 1000.).toFixed(4) + " kWh");
 							break;
+						case SOURCE_DIESE_WOCHE:
+							DATASOURCE = event.data.value;
+							$('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_diese_woche').html((event.data.value.val / 1000.).toFixed(4) + " kWh");
+							break;
+						case SOURCE_DIESER_MONAT:
+							DATASOURCE = event.data.value;
+							$('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_dieser_monat').html((event.data.value.val / 1000).toFixed(2) + " kWh");
+							break;
+						case SOURCE_DIESES_JAHR:
+							DATASOURCE = event.data.value;
+							$('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_dieses_jahr').html((event.data.value.val / 1000).toFixed(2) + " kWh");
+							break;
+						case SOURCE_LETZTE_WOCHE:
+							DATASOURCE = event.data.value;
+							$('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_letzte_woche').html((event.data.value.val / 1000.).toFixed(4) + " kWh");
+							break;
+						case SOURCE_LETZTER_MONAT:
+							DATASOURCE = event.data.value;
+							$('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_letzter_monat').html((event.data.value.val / 1000).toFixed(2) + " kWh");
+							break;
+						case SOURCE_LETZTES_JAHR:
+							DATASOURCE = event.data.value;
+							$('table#consumption-table tr#' + deviceId.replace(/#/g,'-') + ' td#v_letztes_jahr').html((event.data.value.val / 1000).toFixed(2) + " kWh");
+							break;
+						}
 					}
 				break;
 			}
@@ -61,13 +115,53 @@
 			var results = regex.exec(location.search);
 			return results === null ? null : decodeURIComponent(results[1].replace(/\+/g, ' '));
 		};
+
+		function createTableRow(deviceID) {
+			var table = document.getElementById('consumption-table');
+			var tbody = table.getElementsByTagName("tbody")[0];
+			var row = document.createElement("tr");
+			row.setAttribute('id', deviceID.replace(/#/g,"-"));
+			
+			var cell = document.createElement("td");
+			cell.innerHTML = deviceID;
+			cell.setAttribute("id", "deviceId");
+			row.appendChild(cell);
+
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_heute");
+			row.appendChild(cell);
+			
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_gestern");
+			row.appendChild(cell);
+			
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_diese_woche");
+			row.appendChild(cell);
+
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_letzte_woche");
+			row.appendChild(cell);
+			
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_dieser_monat");
+			row.appendChild(cell);
+			
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_letzter_monat");
+			row.appendChild(cell);
+
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_dieses_jahr");
+			row.appendChild(cell);
+
+			cell = document.createElement("td");
+			cell.setAttribute("id", "v_letztes_jahr");
+			row.appendChild(cell);
+
+			tbody.appendChild(row);
+		}
 	</script>
-	<table id='mytable'>
-		<tbody>
-			<tr><td>Verbrauch heute:</td><td id='v_heute'>0</td></tr>
-			<tr><td>Verbrauch gestern:</td><td id='v_gestern'>0</td></tr>
-		</tbody>
-		</table>
 </body>
 
 </html>
