@@ -1,0 +1,73 @@
+<!doctype html>
+<html style="width: 100%; height: 100%; margin: 0;">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="widget-description"
+		content="Widget to display historical power consumption data gathered with the script created by Stephan Kreyenborg." />
+	<meta name="widget-urlparameters" content="datasource//Data source for ShellyVerbrauch script data/datapoint" />
+
+	<title>iQontrol Power Consumption Display Widget</title>
+</head>
+
+<body style="width: 100%; height: 100%; margin: 0px;">
+	<script type="text/javascript">
+
+		var DATASOURCE;
+		var SOURCE_HEUTE = getUrlParameter("datasource") + ".heute";
+		var SOURCE_GESTERN = getUrlParameter("datasource") + ".gestern";
+		
+		
+		console.log("Subscribe to Datapoints");
+		if (getUrlParameter("datasource")){
+			
+			sendPostMessage("getState", SOURCE_HEUTE);
+			sendPostMessage("getState", SOURCE_GESTERN);
+		}
+
+		//send postMessages
+		function sendPostMessage(command, stateId, value) {
+			message = { command: command, stateId: stateId, value: value };
+			window.parent.postMessage(message, "*");
+		}
+		
+		window.addEventListener("message", receivePostMessage, false);
+		function receivePostMessage(event) { //event = {data: message data, origin: url of origin, source: id of sending element}
+			console.log(event);
+			if(event.data && event.data.command) switch(event.data.command){
+				case "getState":
+					if(event.data.stateId) switch(event.data.stateId){
+						case SOURCE_HEUTE:
+							console.log("Received datasource");
+							DATASOURCE = event.data.value;
+							console.log(DATASOURCE)
+							document.getElementById('v_heute').innerHTML = event.data.value.val/1000. + " kWh";
+
+						break;
+						case SOURCE_GESTERN:
+							console.log("Received datasource");
+							DATASOURCE = event.data.value;
+							console.log(DATASOURCE)
+							document.getElementById('v_gestern').innerHTML = event.data.value.val/1000. + " kWh";
+							break;
+					}
+				break;
+			}
+		}
+
+		function getUrlParameter(name) {
+			name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+			var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+			var results = regex.exec(location.search);
+			return results === null ? null : decodeURIComponent(results[1].replace(/\+/g, ' '));
+		};
+	</script>
+	<table id='mytable'>
+		<tbody>
+			<tr><td>Verbrauch heute:</td><td id='v_heute'>0</td></tr>
+			<tr><td>Verbrauch gestern:</td><td id='v_gestern'>0</td></tr>
+		</tbody>
+		</table>
+</body>
+
+</html>
