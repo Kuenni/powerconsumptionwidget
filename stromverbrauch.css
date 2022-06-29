@@ -1,0 +1,15 @@
+
+
+td, th {
+    border: outset 1px cornflowerblue;
+    border-radius: 5px;
+	background-color: lightgrey;
+}
+
+table {
+	font-family: monospace;
+}
+
+caption {
+	font-family: fantasy;
+}
